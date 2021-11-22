@@ -10,7 +10,7 @@ class File(Document):
     storage_mode = StringField()
     storage_details = StringField()
     created = DateField()
-    meta = {'collection': 'metadata'}
+    meta = {'collection': 'files'}
 
     def to_dict(self):
         return mongo_to_dict_helper(self)
