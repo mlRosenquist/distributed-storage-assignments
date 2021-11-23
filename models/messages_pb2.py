@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x0emessages.proto\"%\n\x11storedata_request\x12\x10\n\x08\x66ilename\x18\x01 \x01(\t\"#\n\x0fgetdata_request\x12\x10\n\x08\x66ilename\x18\x01 \x01(\t\"0\n\x17\x66ragment_status_request\x12\x15\n\rfragment_name\x18\x01 \x01(\t\"e\n\x18\x66ragment_status_response\x12\x15\n\rfragment_name\x18\x01 \x01(\t\x12\x12\n\nis_present\x18\x02 \x01(\x08\x12\x0f\n\x07node_id\x18\x03 \x01(\t\x12\r\n\x05\x63ount\x18\x04 \x01(\x05\"-\n\x06header\x12#\n\x0crequest_type\x18\x01 \x01(\x0e\x32\r.request_type*u\n\x0crequest_type\x12\x17\n\x13\x46RAGMENT_STATUS_REQ\x10\x00\x12\x15\n\x11\x46RAGMENT_DATA_REQ\x10\x01\x12\x1b\n\x17STORE_FRAGMENT_DATA_REQ\x10\x02\x12\x18\n\x14RECODE_FRAGMENTS_REQ\x10\x03\x62\x06proto3'
+  serialized_pb=b'\n\x0emessages.proto\"%\n\x11storedata_request\x12\x10\n\x08\x66ilename\x18\x01 \x01(\t\"#\n\x0fgetdata_request\x12\x10\n\x08\x66ilename\x18\x01 \x01(\t\"0\n\x17\x66ragment_status_request\x12\x15\n\rfragment_name\x18\x01 \x01(\t\"e\n\x18\x66ragment_status_response\x12\x15\n\rfragment_name\x18\x01 \x01(\t\x12\x12\n\nis_present\x18\x02 \x01(\x08\x12\x0f\n\x07node_id\x18\x03 \x01(\t\x12\r\n\x05\x63ount\x18\x04 \x01(\x05\"-\n\x19worker_store_file_request\x12\x10\n\x08\x66ilename\x18\x01 \x01(\t\"-\n\x06header\x12#\n\x0crequest_type\x18\x01 \x01(\x0e\x32\r.request_type*\x90\x01\n\x0crequest_type\x12\x17\n\x13\x46RAGMENT_STATUS_REQ\x10\x00\x12\x15\n\x11\x46RAGMENT_DATA_REQ\x10\x01\x12\x1b\n\x17STORE_FRAGMENT_DATA_REQ\x10\x02\x12\x18\n\x14RECODE_FRAGMENTS_REQ\x10\x03\x12\x19\n\x15WORKER_STORE_FILE_REQ\x10\x04\x62\x06proto3'
 )
 
 _REQUEST_TYPE = _descriptor.EnumDescriptor(
@@ -50,11 +50,16 @@ _REQUEST_TYPE = _descriptor.EnumDescriptor(
       serialized_options=None,
       type=None,
       create_key=_descriptor._internal_create_key),
+    _descriptor.EnumValueDescriptor(
+      name='WORKER_STORE_FILE_REQ', index=4, number=4,
+      serialized_options=None,
+      type=None,
+      create_key=_descriptor._internal_create_key),
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=294,
-  serialized_end=411,
+  serialized_start=342,
+  serialized_end=486,
 )
 _sym_db.RegisterEnumDescriptor(_REQUEST_TYPE)
 
@@ -63,6 +68,7 @@ FRAGMENT_STATUS_REQ = 0
 FRAGMENT_DATA_REQ = 1
 STORE_FRAGMENT_DATA_REQ = 2
 RECODE_FRAGMENTS_REQ = 3
+WORKER_STORE_FILE_REQ = 4
 
 
 
@@ -215,6 +221,38 @@ _FRAGMENT_STATUS_RESPONSE = _descriptor.Descriptor(
 )
 
 
+_WORKER_STORE_FILE_REQUEST = _descriptor.Descriptor(
+  name='worker_store_file_request',
+  full_name='worker_store_file_request',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='filename', full_name='worker_store_file_request.filename', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=247,
+  serialized_end=292,
+)
+
+
 _HEADER = _descriptor.Descriptor(
   name='header',
   full_name='header',
@@ -242,8 +280,8 @@ _HEADER = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=247,
-  serialized_end=292,
+  serialized_start=294,
+  serialized_end=339,
 )
 
 _HEADER.fields_by_name['request_type'].enum_type = _REQUEST_TYPE
@@ -251,6 +289,7 @@ DESCRIPTOR.message_types_by_name['storedata_request'] = _STOREDATA_REQUEST
 DESCRIPTOR.message_types_by_name['getdata_request'] = _GETDATA_REQUEST
 DESCRIPTOR.message_types_by_name['fragment_status_request'] = _FRAGMENT_STATUS_REQUEST
 DESCRIPTOR.message_types_by_name['fragment_status_response'] = _FRAGMENT_STATUS_RESPONSE
+DESCRIPTOR.message_types_by_name['worker_store_file_request'] = _WORKER_STORE_FILE_REQUEST
 DESCRIPTOR.message_types_by_name['header'] = _HEADER
 DESCRIPTOR.enum_types_by_name['request_type'] = _REQUEST_TYPE
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
@@ -282,6 +321,13 @@ fragment_status_response = _reflection.GeneratedProtocolMessageType('fragment_st
   # @@protoc_insertion_point(class_scope:fragment_status_response)
   })
 _sym_db.RegisterMessage(fragment_status_response)
+
+worker_store_file_request = _reflection.GeneratedProtocolMessageType('worker_store_file_request', (_message.Message,), {
+  'DESCRIPTOR' : _WORKER_STORE_FILE_REQUEST,
+  '__module__' : 'messages_pb2'
+  # @@protoc_insertion_point(class_scope:worker_store_file_request)
+  })
+_sym_db.RegisterMessage(worker_store_file_request)
 
 header = _reflection.GeneratedProtocolMessageType('header', (_message.Message,), {
   'DESCRIPTOR' : _HEADER,

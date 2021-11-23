@@ -1,4 +1,6 @@
 import json
+from random import randint
+
 import zmq
 import time
 import io
@@ -6,30 +8,46 @@ import logging
 
 from flask import Flask, make_response, g, request, send_file
 from erasure_codes import  reedsolomon
+from models import messages_pb2
 from models.file import File
 from repositories import file_repository
 from utils import is_raspberry_pi
 
+STORAGE_NODES_NO = 4
+
 # Initiate ZMQ sockets
 context = zmq.Context()
 
-# Socket to send tasks to Storage Nodes
+# Socket to send tasks to storage nodes
 send_task_socket = context.socket(zmq.PUSH)
-send_task_socket.bind("tcp://*:5557")
+send_task_socket.bind("tcp://*:5555")
 
 # Socket to receive messages from Storage Nodes
 response_socket = context.socket(zmq.PULL)
-response_socket.bind("tcp://*:5558")
+response_socket.bind("tcp://*:5556")
 
 # Publisher socket for data request broadcasts
 data_req_socket = context.socket(zmq.PUB)
-data_req_socket.bind("tcp://*:5559")
+data_req_socket.bind("tcp://*:5557")
 
-worker_socket = context.socket(zmq.PUB)
-worker_socket.bind("tcp://*:5562")
+# Socket to send tasks to specific nodes
+worker_sockets = dict()
+for i in range(0, STORAGE_NODES_NO):
+    socket = context.socket(zmq.PUSH)
 
-worker_response_socket = context.socket(zmq.PULL)
-worker_response_socket.bind("tcp://*:5563")
+    if i == 0:
+        address = "tcp://*:5560"
+    elif i == 1:
+        address = "tcp://*:5561"
+    elif i == 2:
+        address = "tcp://*:5562"
+    elif i == 3:
+        address = "tcp://*:5563"
+    else:
+        raise NotImplementedError
+
+    socket.bind(address)
+    worker_sockets[i] = socket
 
 # Wait for all workers to start and connect. 
 time.sleep(1)
@@ -114,7 +132,28 @@ def add_files_multipart():
             "coded_fragments": fragment_names,
             "max_erasures": max_erasures
         }
-        
+
+    elif storage_mode == 'erasure_coding_rs_random_worker':
+        # Setup task
+        task = messages_pb2.storedata_request()
+        task.filename = "hello"
+
+        # Determine random worker
+        worker_node = randint(0, 3)
+
+        # Make worker encode and store file
+        task = messages_pb2.worker_store_file_request()
+        task.filename = filename
+        header = messages_pb2.header()
+        header.request_type = messages_pb2.WORKER_STORE_FILE_REQ
+
+        worker_sockets[0].send_multipart([
+            task.SerializeToString(),
+            data])
+
+        result = response_socket.recv_multipart()
+        id = result[0].decode("utf-8")
+        return make_response(id, 201)
     else:
         logging.error("Unexpected storage mode: %s" % storage_mode)
         return make_response("Wrong storage mode", 400)

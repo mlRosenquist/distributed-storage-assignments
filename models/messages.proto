@@ -23,12 +23,18 @@ message fragment_status_response
     int32 count = 4;
 }
 
+message worker_store_file_request
+{
+    string filename = 1;
+}
+
 enum request_type
 {
     FRAGMENT_STATUS_REQ = 0;
     FRAGMENT_DATA_REQ = 1;
     STORE_FRAGMENT_DATA_REQ = 2;
     RECODE_FRAGMENTS_REQ = 3;
+    WORKER_STORE_FILE_REQ = 4;
 }
 
 // This message is sent in the first frame of the request,
