@@ -1,7 +1,6 @@
 import random
 import string
 import os
-from datetime import datetime, date
 
 import bson
 from mongoengine import StringField, FloatField, IntField, ListField, DateField, ObjectIdField

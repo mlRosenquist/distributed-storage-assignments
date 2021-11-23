@@ -38,10 +38,3 @@ message header
     request_type request_type = 1;
 }
 
-message recode_fragments_request
-{
-    string fragment_name = 1;
-    int32 symbol_count = 2;
-    int32 output_fragment_count = 3;
-}
-

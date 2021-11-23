@@ -9,8 +9,6 @@ from models import messages_pb2
 import sys
 import os
 
-from erasure_codes import rlnc
-
 from utils import random_string, write_file, is_raspberry_pi
 
 MAX_CHUNKS_PER_FILE = 10
@@ -47,16 +45,15 @@ if is_raspberry_pi():
     pull_address = "tcp://192.168.0."+server_address+":5557"
     sender_address = "tcp://192.168.0."+server_address+":5558"
     subscriber_address = "tcp://192.168.0."+server_address+":5559"
-    repair_subscriber_address = "tcp://192.168.0."+server_address+":5560"
-    repair_sender_address = "tcp://192.168.0."+server_address+":5561"
+    worker_subscriber_address = "tcp://192.168.0."+server_address+":5562"
+    worker_sender_address = "tcp://192.168.0."+server_address+":5563"
 else:
     # On the local computer: use localhost
     pull_address = "tcp://localhost:5557"
     push_address = "tcp://localhost:5558"
     subscriber_address = "tcp://localhost:5559"
-    repair_subscriber_address = "tcp://localhost:5560"
-    repair_sender_address = "tcp://localhost:5561"
-    
+    worker_subscriber_address = "tcp://localhost:5562"
+    worker_sender_address = "tcp://localhost:5563"
 
 context = zmq.Context()
 # Socket to receive Store Chunk messages from the controller
@@ -72,23 +69,21 @@ subscriber.connect(subscriber_address)
 # Receive every message (empty subscription)
 subscriber.setsockopt(zmq.SUBSCRIBE, b'')
 
-# Socket to receive Repair request messages from the controller
-repair_subscriber = context.socket(zmq.SUB)
-repair_subscriber.connect(repair_subscriber_address)
-# Receive messages destined for all nodes
-repair_subscriber.setsockopt(zmq.SUBSCRIBE, b'all_nodes')
+# Socket to receive worker request messages from the controller
+worker_subscriber = context.socket(zmq.SUB)
+worker_subscriber.connect(worker_subscriber_address)
 # Receive messages destined for this node
-repair_subscriber.setsockopt(zmq.SUBSCRIBE, node_id.encode('UTF-8'))
+worker_subscriber.setsockopt(zmq.SUBSCRIBE, node_id.encode('UTF-8'))
 # Socket to send repair results to the controller
-repair_sender = context.socket(zmq.PUSH)
-repair_sender.connect(repair_sender_address)
+worker_sender = context.socket(zmq.PUSH)
+worker_sender.connect(worker_sender_address)
 
 
 # Use a Poller to monitor three sockets at the same time
 poller = zmq.Poller()
 poller.register(receiver, zmq.POLLIN)
 poller.register(subscriber, zmq.POLLIN)
-poller.register(repair_subscriber, zmq.POLLIN)
+poller.register(worker_subscriber, zmq.POLLIN)
 
 while True:
     try:
@@ -121,7 +116,6 @@ while True:
 
         # Send response (just the file name)
         sender.send_string(task.filename)
-        
 
     if subscriber in socks:
         # Incoming message on the 'subscriber' socket where we get retrieve requests
@@ -153,135 +147,6 @@ while True:
         if(len(frames)>1):
             sender.send_multipart(frames)
 
-    if repair_subscriber in socks:
-        # Incoming message on the 'repair_subscriber' socket
-
-        # Parse the multi-part message
-        msg = repair_subscriber.recv_multipart()
-
-        # The topic is sent as frame 0
-        #topic = str(msg[0])
-        
-        # Parse the header from frame 1. This is used to distinguish between
-        # different types of requests
-        header = messages_pb2.header()
-        header.ParseFromString(msg[1])
-
-        # Parse the actual message based on the header
-        if header.request_type == messages_pb2.FRAGMENT_STATUS_REQ:
-            # Fragment Status requests
-            task = messages_pb2.fragment_status_request()
-            task.ParseFromString(msg[2])
-
-            chunk_name = task.fragment_name
-            chunk_count = 0
-            # Check whether the chunks are on the disk
-            for i in range(0, MAX_CHUNKS_PER_FILE):
-                chunk_found = os.path.exists(data_folder+'/'+chunk_name+"."+str(i)) and \
-                                 os.path.isfile(data_folder+'/'+chunk_name+"."+str(i))
-                
-                if chunk_found == True:
-                    print("Status request for fragment: %s - Found" % chunk_name)
-                    chunk_count += 1
-                else:
-                    print("Status request for fragment: %s - Not found" % chunk_name)
-
-            # Send the response
-            response = messages_pb2.fragment_status_response()
-            response.fragment_name = chunk_name
-            response.is_present = chunk_count > 0
-            response.node_id = node_id
-            response.count = chunk_count
-
-            repair_sender.send(response.SerializeToString())
-
-        elif header.request_type == messages_pb2.FRAGMENT_DATA_REQ:
-            # Fragment data request - same implementation as serving normal data
-            # requests, except for the different socket the response is sent on
-            # and the incoming request's format.
-            # This is currently only used by Reed-Solomon, which stores a single
-            # chunk per storage node.
-            task = messages_pb2.getdata_request()
-            task.ParseFromString(msg[2])
-
-            filename = task.filename
-            print("Data chunk request: %s" % filename)
-
-            #Try to load all fragments with this name
-            #First frame of the response is the filename
-            frames = [bytes(filename, 'utf-8')]
-            #Subsequent frames will contain the file data
-            for i in range(0, MAX_CHUNKS_PER_FILE):
-                try:
-                    with open(data_folder+'/'+filename+"."+str(i), "rb") as in_file:
-                        print("Found chunk %s, sending it back" % filename)
-                        # Add chunk as a new frame
-                        frames.append(in_file.read())
-
-                except FileNotFoundError:
-                    # This is OK here
-                    break
-
-            #Only send a result if at least one chunk was found
-            if(len(frames)>1):
-                repair_sender.send_multipart(frames)
-
-        elif header.request_type == messages_pb2.RECODE_FRAGMENTS_REQ:
-            # Recode fragment data request, specific to RLNC repairs
-            task = messages_pb2.recode_fragments_request()
-            task.ParseFromString(msg[2])
-            fragment_name = task.fragment_name
-            symbol_count = task.symbol_count
-            output_fragment_count = task.output_fragment_count
-            print("Recoded fragment request: %s" % fragment_name)
-
-            # Try to load the requested files from the local file system
-            fragment_count = 0
-            fragments = []
-
-            for i in range(0, MAX_CHUNKS_PER_FILE):
-                try:
-                    with open(data_folder+'/'+fragment_name+"."+str(i), "rb") as in_file:
-                        fragments.append(bytearray(in_file.read()))
-                    fragment_count += 1
-                except FileNotFoundError:
-                    # This is OK here
-                    pass
-
-            #If at least one fragment is found, recode and send the result
-            if fragment_count > 0:
-                recoded_symbols = rlnc.recode(fragments, symbol_count, output_fragment_count)
-                print("Fragment found, sending requested recoded symbols")
-                repair_sender.send_multipart(recoded_symbols)
-
-        elif header.request_type == messages_pb2.STORE_FRAGMENT_DATA_REQ:
-            #Fragment store request
-            task = messages_pb2.storedata_request()
-            task.ParseFromString(msg[2])
-            chunk_name = task.filename
-            chunks_saved = 0
-            
-            # Iterate over stored chunks, replacing missing ones
-            for i in range(0, MAX_CHUNKS_PER_FILE):
-                chunk_local_path = data_folder+'/'+chunk_name+"."+str(i)
-                if os.path.exists(chunk_local_path) and os.path.isfile(chunk_local_path):
-                    continue # chunk already here
-
-                # Chunk missing
-                # The data starts with the third frame
-                data = msg[3 + chunks_saved]
-                # Store the chunk with the given filename
-                write_file(data, chunk_local_path)
-                chunks_saved += 1
-                print("Chunk saved to %s" % chunk_local_path)
-
-                #Stop when all frames have been consumed (all repair fragments have been saved)
-                if chunks_saved + 3 >= len(msg):
-                    break
-
-            # Send response (just the file name)
-            repair_sender.send_string(task.filename)
-
-        else:
-            print("Message type not supported")
+    if worker_subscriber in socks:
+        print("hello")
 #
