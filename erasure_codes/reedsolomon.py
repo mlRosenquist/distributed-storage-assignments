@@ -60,7 +60,12 @@ def store_file(file_data, max_erasures, send_task_socket, response_socket):
         task = messages_pb2.storedata_request()
         task.filename = name
 
+        # Build header
+        header = messages_pb2.header()
+        header.request_type = messages_pb2.STORE_FRAGMENT_DATA_REQ
+
         send_task_socket.send_multipart([
+            header.SerializeToString(),
             task.SerializeToString(),
             coefficients[:symbols] + bytearray(symbol)
         ])
@@ -73,6 +78,60 @@ def store_file(file_data, max_erasures, send_task_socket, response_socket):
     return fragment_names
 #
 
+def get_store_file_tasks(file_data, max_erasures):
+    """
+    Store a file using Reed Solomon erasure coding, protecting it against 'max_erasures'
+    unavailable storage nodes.
+    The erasure coding part codes are the customized version of the 'encode_decode_using_coefficients'
+    example of kodo-python, where you can find a detailed description of each step.
+
+    :param file_data: The file contents to be stored as a Python bytearray
+    :param max_erasures: How many storage node failures should the data survive
+    :param send_task_socket: A ZMQ PUSH socket to the storage nodes
+    :param response_socket: A ZMQ PULL socket where the storage nodes respond
+    :return: A list of the coded fragment names, e.g. (c1,c2,c3,c4)
+    """
+
+    # Make sure we can realize max_erasures with 4 storage nodes
+    assert (max_erasures >= 0)
+    assert (max_erasures < STORAGE_NODES_NUM)
+
+    # How many coded fragments (=symbols) will be required to reconstruct the encoded data.
+    symbols = STORAGE_NODES_NUM - max_erasures
+    # The size of one coded fragment (total size/number of symbols, rounded up)
+    symbol_size = math.ceil(len(file_data) / symbols)
+    # Kodo RLNC encoder using 2^8 finite field
+    encoder = kodo.block.Encoder(kodo.FiniteField.binary8)
+    encoder.configure(symbols, symbol_size)
+    encoder.set_symbols_storage(file_data)
+    symbol = bytearray(encoder.symbol_bytes)
+
+    fragment_names = []
+
+    tasks = []
+    data = []
+    # Generate one coded fragment for each Storage Node
+    for i in range(STORAGE_NODES_NUM):
+        # Select the next Reed Solomon coefficient vector
+        coefficients = RS_CAUCHY_COEFFS[i]
+        # Generate a coded fragment with these coefficients
+        # (trim the coeffs to the actual length we need)
+        encoder.encode_symbol(symbol, coefficients[:symbols])
+        # Generate a random name for it and save
+        name = random_string(8)
+        fragment_names.append(name)
+
+        # Send a Protobuf STORE DATA request to the Storage Nodes
+        task = messages_pb2.storedata_request()
+        task.filename = name
+
+        tasks.append(task)
+        data.append(coefficients[:symbols] + bytearray(symbol))
+
+    return tasks, data
+
+
+#
 
 def decode_file(symbols):
     """
@@ -129,9 +188,16 @@ def get_file(coded_fragments, max_erasures, file_size,
     for name in fragnames:
         task = messages_pb2.getdata_request()
         task.filename = name
-        data_req_socket.send(
+
+        # Build header
+        header = messages_pb2.header()
+        header.request_type = messages_pb2.FRAGMENT_DATA_REQ
+
+        print(f'Requesting fragment: {task.filename}')
+        data_req_socket.send_multipart([
+            header.SerializeToString(),
             task.SerializeToString()
-            )
+            ])
 
     # Receive all chunks and insert them into the symbols array
     symbols = []

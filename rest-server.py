@@ -30,29 +30,8 @@ response_socket.bind("tcp://*:5556")
 data_req_socket = context.socket(zmq.PUB)
 data_req_socket.bind("tcp://*:5557")
 
-# Socket to send tasks to specific nodes
-worker_sockets = dict()
-for i in range(0, STORAGE_NODES_NO):
-    socket = context.socket(zmq.PUSH)
-
-    if i == 0:
-        address = "tcp://*:5560"
-    elif i == 1:
-        address = "tcp://*:5561"
-    elif i == 2:
-        address = "tcp://*:5562"
-    elif i == 3:
-        address = "tcp://*:5563"
-    else:
-        raise NotImplementedError
-
-    socket.bind(address)
-    worker_sockets[i] = socket
-
-# Wait for all workers to start and connect. 
+# Wait for all workers to start and connect.
 time.sleep(1)
-print("Listening to ZMQ messages on tcp://*:5558 and tcp://*:5561")
-
 
 # Instantiate the Flask app (must be before the endpoint functions)
 app = Flask(__name__)
@@ -61,8 +40,6 @@ app = Flask(__name__)
 @app.route('/files',  methods=['GET'])
 def list_files():
     files = file_repository.get_files()
-    # Convert files from sqlite3.Row object (which is not JSON-encodable) to 
-    # a standard Python dictionary simply by casting
     files = list(map(lambda f: f.to_dict(), files))
     return make_response({"files": json.dumps(files)})
 
@@ -89,6 +66,10 @@ def download_file(file_id):
             data_req_socket, 
             response_socket
         )
+    elif file.storage_mode == 'erasure_coding_rs_random_worker':
+        raise NotImplementedError('Need to implement assigning the decode part to worker')
+    else:
+        raise NotImplementedError('Unsupported storage mode')
 
     return send_file(io.BytesIO(file_data), mimetype=file.content_type)
 
@@ -123,7 +104,6 @@ def add_files_multipart():
         # Parse max_erasures (everything is a string in request.form, 
         # we need to convert to int manually), set default value to 1
         max_erasures = int(payload.get('max_erasures', 1))
-        print("Max erasures: %d" % (max_erasures))
         
         # Store the file contents with Reed Solomon erasure coding
         fragment_names = reedsolomon.store_file(data, max_erasures, send_task_socket, response_socket)
@@ -132,28 +112,33 @@ def add_files_multipart():
             "coded_fragments": fragment_names,
             "max_erasures": max_erasures
         }
-
     elif storage_mode == 'erasure_coding_rs_random_worker':
-        # Setup task
-        task = messages_pb2.storedata_request()
-        task.filename = "hello"
-
-        # Determine random worker
-        worker_node = randint(0, 3)
-
-        # Make worker encode and store file
+        # Make random worker encode and store file on nodes
+        # Build task
+        max_erasures = int(payload.get('max_erasures', 1))
         task = messages_pb2.worker_store_file_request()
-        task.filename = filename
+        task.max_erasures = max_erasures
+
+        # Build header
         header = messages_pb2.header()
         header.request_type = messages_pb2.WORKER_STORE_FILE_REQ
 
-        worker_sockets[0].send_multipart([
+        # Send task to random node
+        send_task_socket.send_multipart([
+            header.SerializeToString(),
             task.SerializeToString(),
-            data])
+            data
+        ])
 
-        result = response_socket.recv_multipart()
-        id = result[0].decode("utf-8")
-        return make_response(id, 201)
+        # Await response from worker node
+        msg = response_socket.recv_multipart()
+        task = messages_pb2.worker_store_file_response()
+        task.ParseFromString(msg[0])
+
+        storage_details = {
+            "coded_fragments": list(task.fragments),
+            "max_erasures": max_erasures
+        }
     else:
         logging.error("Unexpected storage mode: %s" % storage_mode)
         return make_response("Wrong storage mode", 400)

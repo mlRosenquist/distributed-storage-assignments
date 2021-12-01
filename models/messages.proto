@@ -3,6 +3,7 @@ syntax = "proto3";
 message storedata_request
 {
     string filename = 1;
+    int32 node_return_address = 2;
 }
 
 message getdata_request
@@ -25,7 +26,13 @@ message fragment_status_response
 
 message worker_store_file_request
 {
-    string filename = 1;
+    string node_id = 1;
+    int32 max_erasures = 2;
+}
+
+message worker_store_file_response
+{
+    repeated string fragments = 1;
 }
 
 enum request_type

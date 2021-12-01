@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x0emessages.proto\"%\n\x11storedata_request\x12\x10\n\x08\x66ilename\x18\x01 \x01(\t\"#\n\x0fgetdata_request\x12\x10\n\x08\x66ilename\x18\x01 \x01(\t\"0\n\x17\x66ragment_status_request\x12\x15\n\rfragment_name\x18\x01 \x01(\t\"e\n\x18\x66ragment_status_response\x12\x15\n\rfragment_name\x18\x01 \x01(\t\x12\x12\n\nis_present\x18\x02 \x01(\x08\x12\x0f\n\x07node_id\x18\x03 \x01(\t\x12\r\n\x05\x63ount\x18\x04 \x01(\x05\"-\n\x19worker_store_file_request\x12\x10\n\x08\x66ilename\x18\x01 \x01(\t\"-\n\x06header\x12#\n\x0crequest_type\x18\x01 \x01(\x0e\x32\r.request_type*\x90\x01\n\x0crequest_type\x12\x17\n\x13\x46RAGMENT_STATUS_REQ\x10\x00\x12\x15\n\x11\x46RAGMENT_DATA_REQ\x10\x01\x12\x1b\n\x17STORE_FRAGMENT_DATA_REQ\x10\x02\x12\x18\n\x14RECODE_FRAGMENTS_REQ\x10\x03\x12\x19\n\x15WORKER_STORE_FILE_REQ\x10\x04\x62\x06proto3'
+  serialized_pb=b'\n\x0emessages.proto\"B\n\x11storedata_request\x12\x10\n\x08\x66ilename\x18\x01 \x01(\t\x12\x1b\n\x13node_return_address\x18\x02 \x01(\x05\"#\n\x0fgetdata_request\x12\x10\n\x08\x66ilename\x18\x01 \x01(\t\"0\n\x17\x66ragment_status_request\x12\x15\n\rfragment_name\x18\x01 \x01(\t\"e\n\x18\x66ragment_status_response\x12\x15\n\rfragment_name\x18\x01 \x01(\t\x12\x12\n\nis_present\x18\x02 \x01(\x08\x12\x0f\n\x07node_id\x18\x03 \x01(\t\x12\r\n\x05\x63ount\x18\x04 \x01(\x05\"B\n\x19worker_store_file_request\x12\x0f\n\x07node_id\x18\x01 \x01(\t\x12\x14\n\x0cmax_erasures\x18\x02 \x01(\x05\"/\n\x1aworker_store_file_response\x12\x11\n\tfragments\x18\x01 \x03(\t\"-\n\x06header\x12#\n\x0crequest_type\x18\x01 \x01(\x0e\x32\r.request_type*\xab\x01\n\x0crequest_type\x12\x17\n\x13\x46RAGMENT_STATUS_REQ\x10\x00\x12\x15\n\x11\x46RAGMENT_DATA_REQ\x10\x01\x12\x1b\n\x17STORE_FRAGMENT_DATA_REQ\x10\x02\x12\x18\n\x14RECODE_FRAGMENTS_REQ\x10\x03\x12\x19\n\x15WORKER_STORE_FILE_REQ\x10\x04\x12\x19\n\x15\x43ONNECT_TO_WORKER_REQ\x10\x05\x62\x06proto3'
 )
 
 _REQUEST_TYPE = _descriptor.EnumDescriptor(
@@ -55,11 +55,16 @@ _REQUEST_TYPE = _descriptor.EnumDescriptor(
       serialized_options=None,
       type=None,
       create_key=_descriptor._internal_create_key),
+    _descriptor.EnumValueDescriptor(
+      name='CONNECT_TO_WORKER_REQ', index=5, number=5,
+      serialized_options=None,
+      type=None,
+      create_key=_descriptor._internal_create_key),
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=342,
-  serialized_end=486,
+  serialized_start=441,
+  serialized_end=612,
 )
 _sym_db.RegisterEnumDescriptor(_REQUEST_TYPE)
 
@@ -69,6 +74,7 @@ FRAGMENT_DATA_REQ = 1
 STORE_FRAGMENT_DATA_REQ = 2
 RECODE_FRAGMENTS_REQ = 3
 WORKER_STORE_FILE_REQ = 4
+CONNECT_TO_WORKER_REQ = 5
 
 
 
@@ -87,6 +93,13 @@ _STOREDATA_REQUEST = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='node_return_address', full_name='storedata_request.node_return_address', index=1,
+      number=2, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -100,7 +113,7 @@ _STOREDATA_REQUEST = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=18,
-  serialized_end=55,
+  serialized_end=84,
 )
 
 
@@ -131,8 +144,8 @@ _GETDATA_REQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=57,
-  serialized_end=92,
+  serialized_start=86,
+  serialized_end=121,
 )
 
 
@@ -163,8 +176,8 @@ _FRAGMENT_STATUS_REQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=94,
-  serialized_end=142,
+  serialized_start=123,
+  serialized_end=171,
 )
 
 
@@ -216,8 +229,8 @@ _FRAGMENT_STATUS_RESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=144,
-  serialized_end=245,
+  serialized_start=173,
+  serialized_end=274,
 )
 
 
@@ -230,9 +243,16 @@ _WORKER_STORE_FILE_REQUEST = _descriptor.Descriptor(
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='filename', full_name='worker_store_file_request.filename', index=0,
+      name='node_id', full_name='worker_store_file_request.node_id', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='max_erasures', full_name='worker_store_file_request.max_erasures', index=1,
+      number=2, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
@@ -248,8 +268,40 @@ _WORKER_STORE_FILE_REQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=247,
-  serialized_end=292,
+  serialized_start=276,
+  serialized_end=342,
+)
+
+
+_WORKER_STORE_FILE_RESPONSE = _descriptor.Descriptor(
+  name='worker_store_file_response',
+  full_name='worker_store_file_response',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='fragments', full_name='worker_store_file_response.fragments', index=0,
+      number=1, type=9, cpp_type=9, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=344,
+  serialized_end=391,
 )
 
 
@@ -280,8 +332,8 @@ _HEADER = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=294,
-  serialized_end=339,
+  serialized_start=393,
+  serialized_end=438,
 )
 
 _HEADER.fields_by_name['request_type'].enum_type = _REQUEST_TYPE
@@ -290,6 +342,7 @@ DESCRIPTOR.message_types_by_name['getdata_request'] = _GETDATA_REQUEST
 DESCRIPTOR.message_types_by_name['fragment_status_request'] = _FRAGMENT_STATUS_REQUEST
 DESCRIPTOR.message_types_by_name['fragment_status_response'] = _FRAGMENT_STATUS_RESPONSE
 DESCRIPTOR.message_types_by_name['worker_store_file_request'] = _WORKER_STORE_FILE_REQUEST
+DESCRIPTOR.message_types_by_name['worker_store_file_response'] = _WORKER_STORE_FILE_RESPONSE
 DESCRIPTOR.message_types_by_name['header'] = _HEADER
 DESCRIPTOR.enum_types_by_name['request_type'] = _REQUEST_TYPE
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
@@ -328,6 +381,13 @@ worker_store_file_request = _reflection.GeneratedProtocolMessageType('worker_sto
   # @@protoc_insertion_point(class_scope:worker_store_file_request)
   })
 _sym_db.RegisterMessage(worker_store_file_request)
+
+worker_store_file_response = _reflection.GeneratedProtocolMessageType('worker_store_file_response', (_message.Message,), {
+  'DESCRIPTOR' : _WORKER_STORE_FILE_RESPONSE,
+  '__module__' : 'messages_pb2'
+  # @@protoc_insertion_point(class_scope:worker_store_file_response)
+  })
+_sym_db.RegisterMessage(worker_store_file_response)
 
 header = _reflection.GeneratedProtocolMessageType('header', (_message.Message,), {
   'DESCRIPTOR' : _HEADER,
