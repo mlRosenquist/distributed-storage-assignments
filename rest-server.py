@@ -1,3 +1,4 @@
+import csv
 import json
 from random import randint
 
@@ -36,6 +37,8 @@ time.sleep(1)
 # Instantiate the Flask app (must be before the endpoint functions)
 app = Flask(__name__)
 
+file_handle = open('results.csv', 'w')
+csv_writer = csv.writer(file_handle)
 
 @app.route('/files',  methods=['GET'])
 def list_files():
@@ -76,6 +79,8 @@ def download_file(file_id):
 
 @app.route('/files_mp', methods=['POST'])
 def add_files_multipart():
+    start_time = time.time()
+
     # Flask separates files from the other form fields
     payload = request.form
     files = request.files
@@ -108,6 +113,10 @@ def add_files_multipart():
         # Store the file contents with Reed Solomon erasure coding
         fragment_names = reedsolomon.store_file(data, max_erasures, send_task_socket, response_socket)
 
+        end_time = time.time()
+        total_time = end_time - start_time
+        csv_writer.writerow(['erasure_write', size, storage_mode, max_erasures, total_time])
+
         storage_details = {
             "coded_fragments": fragment_names,
             "max_erasures": max_erasures
@@ -130,8 +139,17 @@ def add_files_multipart():
             data
         ])
 
+        end_time = time.time()
+        total_time = end_time - start_time
+        csv_writer.writerow(['erasure_write', size, storage_mode, max_erasures, total_time])
+
         # Await response from worker node
         msg = response_socket.recv_multipart()
+
+        end_time = time.time()
+        total_time = end_time - start_time
+        csv_writer.writerow(['erasure_write_worker_response', size, storage_mode, max_erasures, total_time])
+
         task = messages_pb2.worker_store_file_response()
         task.ParseFromString(msg[0])
 
@@ -152,6 +170,10 @@ def add_files_multipart():
 
     file_repository.add_file(file)
     file = file.to_dict()
+
+    end_time = time.time()
+    total_time = end_time - start_time
+    csv_writer.writerow(['finished', size, storage_mode, max_erasures, total_time])
     return make_response({"id": file['id'] }, 201)
 
 
