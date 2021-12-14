@@ -39,6 +39,8 @@ app = Flask(__name__)
 
 file_handle = open('results.csv', 'w')
 csv_writer = csv.writer(file_handle)
+fields = ['event', 'file_size', 'storage_mode', 'max_erasures', 'time']
+csv_writer.writerow(fields)
 
 @app.route('/files',  methods=['GET'])
 def list_files():
