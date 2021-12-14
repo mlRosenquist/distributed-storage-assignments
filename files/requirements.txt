@@ -2,3 +2,4 @@ kodo
 flask
 zmq
 mongoengine
+pandas

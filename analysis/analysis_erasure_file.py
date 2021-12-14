@@ -5,7 +5,7 @@ import time
 import requests
 
 base_url = 'http://localhost:9000'
-iterations = 5
+iterations = 50
 files = ['10KB', '100KB', '1MB', '10MB', '100MB']
 result_file = "results_erasure.csv"
 fields = ['id',
